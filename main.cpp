@@ -173,7 +173,7 @@ std::unique_ptr<Circuit> parse_circuit(const std::string &filename) {
                 assert(qid.size() == 2);
                 c->addGate(Gate::CRZ(qid[0], qid[1], gate.second[0]));
                 // printf("crz %d %d %f\n", qid[0], qid[1], gate.second[0]);
-            }  else if (gate.first == "cu1") {
+            }  else if (gate.first == "cu1" || gate.first == "cp") {
                 assert(gate.second.size() == 1);
                 fscanf(f, "%s", buffer);
                 auto qid = parse_qid(buffer);
@@ -187,6 +187,12 @@ std::unique_ptr<Circuit> parse_circuit(const std::string &filename) {
                 assert(qid.size() == 1);
                 c->addGate(Gate::U1(qid[0], gate.second[0]));
                 // printf("u1 %d %f\n", qid[0], gate.second[0]);
+            } else if (gate.first == "p") {
+                assert(gate.second.size() == 1);
+                fscanf(f, "%s", buffer);
+                auto qid = parse_qid(buffer);
+                assert(qid.size() == 1);
+                c->addGate(Gate::U1(qid[0], gate.second[0]));
             } else if (gate.first == "u3") {
                 assert(gate.second.size() == 3);
                 fscanf(f, "%s", buffer);
@@ -194,6 +200,12 @@ std::unique_ptr<Circuit> parse_circuit(const std::string &filename) {
                 assert(qid.size() == 1);
                 c->addGate(Gate::U3(qid[0], gate.second[0], gate.second[1], gate.second[2]));
                 // printf("u3 %d %f %f %f\n", qid[0], gate.second[0], gate.second[1], gate.second[2]);
+            } else if (gate.first == "u2") {
+                assert(gate.second.size() == 2);
+                fscanf(f, "%s", buffer);
+                auto qid = parse_qid(buffer);
+                assert(qid.size() == 1);
+                c->addGate(Gate::U2(qid[0], gate.second[0], gate.second[1]));
             } else if (gate.first == "rx") {
                 assert(gate.second.size() == 1);
                 fscanf(f, "%s", buffer);
@@ -243,7 +255,7 @@ int main(int argc, char* argv[]) {
     c = parse_circuit(std::string(argv[1]));
     c->compile();
     c->run();
-    c->printState();
+    // c->printState();
     Logger::print();
     #if USE_MPI 
         checkMPIErrors(MPI_Finalize());

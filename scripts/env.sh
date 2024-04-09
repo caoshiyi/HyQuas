@@ -37,6 +37,12 @@ case $(hostname -s) in
     source /opt/spack/share/spack/setup-env.sh
     spack load cuda@11 /njgeoec
     spack load openmpi /dfes7hw
+    ;;
+  nid*)
+    echo "[CLUSTER] Perlmutter"
+    module load nccl
+    export NCCL_ROOT=/global/common/software/nersc/pm-2022q4/sw/nccl-2.15.5-ofi-r4
+    export LD_LIBRARY_PATH=$NCCL_ROOT/lib:$LD_LIBRARY_PATH
 esac
 
 $@

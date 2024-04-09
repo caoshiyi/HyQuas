@@ -5,6 +5,13 @@ find_package(CUDA REQUIRED)
 find_package(OpenMP REQUIRED)
 find_package(Nccl REQUIRED)
 find_package(MPI REQUIRED)
+set(MATH_ROOT "/opt/nvidia/hpc_sdk/Linux_x86_64/22.7/math_libs/11.7")
+set(CUDA_CUBLAS_LIBRARIES ${MATH_ROOT}/lib64/libcublas.so)
+MESSAGE(STATUS: "FOUND CUDA: ${CUDA_LIBRARIES}, cublas - ${CUDA_CUBLAS_LIBRARIES}")
+set(MPI_CXX_INCLUDE_DIRS "$ENV{CRAY_MPICH_DIR}/include")
+message(STATUS "Manually setting MPI include dirs to: ${MPI_CXX_INCLUDE_DIRS}")
+set(MPI_LIBRARIES "$ENV{CRAY_MPICH_DIR}/lib/libmpi.so")
+message(STATUS "Manually setting MPI lib dirs to: ${MPI_LIBRARIES}")
 
 find_library(CUTT cutt "${PROJECT_SOURCE_DIR}/third-party/cutt/cutt/lib")
 include_directories(${PROJECT_SOURCE_DIR}/third-party/cutt/cutt/include)
@@ -12,7 +19,7 @@ include_directories(${PROJECT_SOURCE_DIR}/third-party/dbg-macro)
 MESSAGE(STATUS "Found CUTT: ${CUTT}")
 
 set(CMAKE_CXX_FLAGS "-std=c++14 -O2 -g -Wall ${OpenMP_CXX_FLAGS}")
-set(CUDA_NVCC_FLAGS "-Xcompiler -fopenmp -std=c++14 -O2 -g -arch=compute_70 -code=sm_70 --ptxas-options=-v -lineinfo -keep")
+set(CUDA_NVCC_FLAGS "-Xcompiler -fopenmp -std=c++14 -O2 -g -arch=compute_80 -code=sm_80 --ptxas-options=-v -lineinfo -keep")
 set(BACKEND "group" CACHE STRING "Backend mode, one of [serial, group, group-serial, blas, mix, blas-advance]")
 MESSAGE(STATUS "Backend: ${BACKEND}")
 
@@ -104,11 +111,19 @@ if(LOG_EVALUATOR)
     add_definitions(-DLOG_EVALUATOR)
 endif(LOG_EVALUATOR)
 
-include_directories ("${PROJECT_SOURCE_DIR}/src")
+set(INCLUDE_DIRS "")
+message(STATUS "nccl include: ${NCCL_INCLUDE_DIR}")
+message(STATUS "nccl lib: ${NCCL_LIBRARY}")
+message(STATUS "mpi include: ${MPI_CXX_INCLUDE_DIRS}")
+list(APPEND INCLUDE_DIRS
+  ${NCCL_INCLUDE_DIR}
+  ${MPI_CXX_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}/src)
+
+include_directories (${INCLUDE_DIRS})
 add_subdirectory("src")
 add_executable(main main.cpp)
 target_link_libraries(main QCSimulator ${CUTT} ${OpenMP_CXX_FLAGS} ${CUDA_CUBLAS_LIBRARIES} ${MPI_CXX_LIBRARIES} ${NCCL_LIBRARY})
-
 if (MICRO_BENCH)
     set(BENCHMARKS local-single local-ctr two-group-h bench-blas)
     foreach(BENCHMARK IN LISTS BENCHMARKS)
